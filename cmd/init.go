@@ -3,7 +3,11 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/flat35hd99/manesan/model"
+	"github.com/flat35hd99/manesan/repository"
 	"github.com/spf13/cobra"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 // initCmd represents the init command
@@ -12,7 +16,33 @@ var initCmd = &cobra.Command{
 	Short: "Initilize Note",
 	Long:  `Setting your manesan note.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("init called")
+		db, err := gorm.Open(sqlite.Open("manesan.db"), &gorm.Config{})
+		if err != nil {
+			panic(err)
+		}
+
+		db.Migrator().CreateTable(model.Note{})
+		db.Migrator().CreateTable(model.Experiment{})
+
+		noteRepository := repository.NoteRepositoryImpl{DB: db}
+		note := &model.Note{
+			Name: "The first note",
+			Experiments: []model.Experiment{
+				{
+					Name: "A",
+				},
+				{
+					Name: "B",
+				},
+			},
+		}
+		err = noteRepository.Create(note)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println("success!")
 	},
 }
 
